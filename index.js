@@ -11,7 +11,7 @@ app.use(express.json());
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ucdi4.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -43,6 +43,19 @@ async function run() {
     app.get('/productsCount', async (req, res) => {
       const count = await productCollection.estimatedDocumentCount();
       res.send({ count })
+    })
+
+    // /cartData?data=${queryString}
+    app.get('/data', async(req, res) => {
+      const ids = req.query.id;
+      if (!ids) {
+        return res.status(400).json({ error: 'No IDs provided' });
+      }
+      const idArray = Array.isArray(ids) ? ids : [ids];
+      const objectIds = idArray.map(id => new ObjectId(id));
+      const result = await productCollection.find({ _id: { $in: objectIds } })
+      .toArray();
+      res.json(result)
     })
 
     // Send a ping to confirm a successful connection
